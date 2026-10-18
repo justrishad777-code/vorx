@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#160624">
+<title>VORX · Karat</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vorx.css">
+<style>
+.mxc{flex:1;min-height:0;display:flex;flex-direction:column}
+#mx{flex:1;min-height:0;display:grid;grid-auto-rows:1fr;gap:4px}
+.mh,.mr{display:grid;grid-template-columns:.7fr 1fr 1fr 1.5fr;text-align:center}
+.mh{padding:0 6px 6px;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--mut)}
+.mr{align-items:center;padding:0 6px;color:var(--txt);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(22,6,36,.4);border:1px solid var(--line);border-radius:14px 6px 14px 6px;transition:.2s}
+.mr b{text-align:left;color:var(--gold)}.mr em{font-style:normal;font-weight:900;color:var(--gold2)}
+.mr.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,rgba(22,6,36,.4));box-shadow:0 0 14px rgba(240,185,11,.25)}
+</style>
+<script src="vorx.js"></script>
+</head>
+<body class="fit" data-page="karat" data-title="Karat">
+<main class="wrap">
+  <section class="card">
+    <label class="lbl" for="w">Weight (g) of <span id="sk">22K</span> gold</label>
+    <input class="in big" id="w" data-pad="Weight (grams)" inputmode="none" autocomplete="off" placeholder="0.000">
+    <div class="g2" style="margin-top:8px">
+      <div class="tile tall"><small>Pure gold (g)</small><div class="v" id="pg">0.000</div></div>
+      <div class="tile tall"><small>Pure gold (vori)</small><div class="v" id="pv">0.0000</div></div>
+    </div>
+  </section>
+  <section class="card mxc">
+    <div class="mh"><span>KARAT</span><span>PURITY</span><span>FINENESS</span><span>SAME GOLD (g)</span></div>
+    <div id="mx"></div>
+  </section>
+  <p class="note">Tap a karat to say what your weight is. The last column is the weight of each karat that holds the same pure gold.</p>
+</main>
+<script>
+(() => {
+  const { $, $$, store } = VORX, K = [24, 22, 21, 18, 14, 10, 9], VORI = 11.664;
+  const S = Object.assign({ w: '', sel: 22 }, store.get('karat', {}));
+  $('#w').value = S.w;
+  $('#mx').innerHTML = K.map(k => `<button class="mr" data-k="${k}"><b>${k}K</b><span>${(k / 24 * 100).toFixed(1)}%</span><span>${Math.round(k / 24 * 1000)}</span><em>0.000</em></button>`).join('');
+  function calc() {
+    const pure = (parseFloat($('#w').value) || 0) * S.sel / 24;
+    $('#pg').textContent = pure.toFixed(3); $('#pv').textContent = (pure / VORI).toFixed(4); $('#sk').textContent = S.sel + 'K';
+    $$('.mr').forEach(r => { const k = +r.dataset.k; r.classList.toggle('on', k === S.sel); r.querySelector('em').textContent = (pure / (k / 24)).toFixed(3); });
+  }
+  document.addEventListener('input', e => { if (e.target.id === 'w') { S.w = e.target.value; store.set('karat', S); calc(); } });
+  document.addEventListener('click', e => { const r = e.target.closest('.mr'); if (r) { S.sel = +r.dataset.k; store.set('karat', S); VORX.buzz(); calc(); } });
+  calc();
+})();
+</script>
+</body>
+</html>

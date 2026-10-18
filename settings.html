@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#160624">
+<title>VORX · Settings</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vorx.css">
+<style>
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.hd b{font-size:12px;letter-spacing:.14em;color:var(--gold)}
+.pre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.pre button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;font-size:11px;font-weight:800;color:var(--txt);background:var(--glass);border:1px solid var(--line);border-radius:14px 6px 14px 6px}
+.pre i{width:26px;height:14px;border-radius:99px}
+.cr{display:flex;justify-content:space-between;align-items:center;padding:6px 2px;font-size:13px;font-weight:700;border-top:1px solid var(--line)}
+.cr input{width:52px;height:30px;padding:0;background:none;border:1.5px solid var(--line);border-radius:10px 4px 10px 4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.two .btn{min-height:44px;font-size:12px}
+</style>
+<script src="vorx.js"></script>
+</head>
+<body class="fit" data-page="settings" data-title="Settings">
+<main class="wrap">
+  <section class="card">
+    <div class="hd"><b>THEME</b><button class="edit" id="reset">Reset</button></div>
+    <div class="pre" id="pre"></div>
+    <div id="cr"></div>
+  </section>
+  <section class="card">
+    <div class="hd"><b>APP</b></div>
+    <div class="two"><button class="btn" id="inst">Install app</button><button class="btn ghost" id="clr">Clear cache</button></div>
+    <p class="note" id="hint" style="margin-top:10px">If the app feels slow or does not update, clear the cache.</p>
+    <p class="note" style="margin-top:4px">VORX Pro Terminal · v1.0</p>
+  </section>
+</main>
+<script>
+(() => {
+  const { $, $$, store, toast } = VORX, root = document.documentElement;
+  const DEF = { gold: '#f0b90b', mag: '#d902ee', base: '#160624', txt: '#f6f0fd' };
+  const PRE = { Gold: ['#f0b90b', '#d902ee', '#160624'], Emerald: ['#34d399', '#22d3ee', '#04190f'], Ocean: ['#38bdf8', '#818cf8', '#06142b'], Rose: ['#fb7185', '#f59e0b', '#240712'] };
+  const ROWS = [['gold', 'Primary (gold)'], ['mag', 'Accent'], ['base', 'Background'], ['txt', 'Text']];
+  const T = Object.assign({}, DEF, store.get('theme', {}));
+  const lighten = h => { const n = parseInt(h.slice(1), 16); return '#' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(c => Math.round(c + (255 - c) * .55).toString(16).padStart(2, '0')).join(''); };
+  function put(k, v) { T[k] = v; if (k === 'gold') T.gold2 = lighten(v); }
+  function applyAll() { for (const k in T) root.style.setProperty('--' + k, T[k]); store.set('theme', T); ROWS.forEach(r => $('#c-' + r[0]).value = T[r[0]]); }
+  $('#cr').innerHTML = ROWS.map(r => `<div class="cr"><span>${r[1]}</span><input type="color" id="c-${r[0]}" value="${T[r[0]]}" aria-label="${r[1]}"></div>`).join('');
+  $('#pre').innerHTML = Object.keys(PRE).map(n => `<button data-p="${n}"><i style="background:linear-gradient(90deg,${PRE[n][0]},${PRE[n][1]})"></i>${n}</button>`).join('');
+  document.addEventListener('input', e => { const m = /^c-(\w+)$/.exec(e.target.id || ''); if (m) { put(m[1], e.target.value); applyAll(); } });
+  document.addEventListener('click', e => { const p = e.target.closest('[data-p]'); if (p) { const v = PRE[p.dataset.p]; put('gold', v[0]); put('mag', v[1]); put('base', v[2]); applyAll(); VORX.buzz(); } });
+  $('#reset').onclick = () => { for (const k in T) root.style.removeProperty('--' + k); Object.keys(T).forEach(k => delete T[k]); Object.assign(T, DEF, { gold2: '#ffe270' }); store.set('theme', {}); ROWS.forEach(r => $('#c-' + r[0]).value = DEF[r[0]]); toast('Default theme restored'); };
+  $('#clr').onclick = async () => {
+    try {
+      (await caches.keys()).forEach(k => caches.delete(k));
+      const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : []; regs.forEach(r => r.unregister());
+      toast('Cache cleared, reloading'); setTimeout(() => location.reload(), 900);
+    } catch (e) { toast('Cache clearing is not supported here'); }
+  };
+  const inst = $('#inst');
+  function sync() { inst.disabled = !VORX.installEvt; inst.style.opacity = VORX.installEvt ? 1 : .5; }
+  inst.onclick = async () => {
+    if (!VORX.installEvt) return toast('Use your browser menu: Add to Home screen');
+    VORX.installEvt.prompt(); await VORX.installEvt.userChoice; VORX.installEvt = null; sync();
+  };
+  window.addEventListener('vorx-install', sync); sync();
+})();
+</script>
+</body>
+</html>

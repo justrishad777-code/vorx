@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#160624">
+<title>VORX · Converter</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vorx.css">
+<script src="vorx.js"></script>
+</head>
+<body class="fit" data-page="converter" data-title="Converter">
+<main class="wrap mid">
+  <section class="card cardf">
+    <span class="sub">GRAM → VORI</span>
+    <input class="in big" id="g" data-pad="Weight in grams" inputmode="none" autocomplete="off" placeholder="0.000" aria-label="Grams">
+    <div class="tiles4">
+      <div class="tile"><small>Vori</small><div class="v" id="rv">0</div></div>
+      <div class="tile"><small>Ana</small><div class="v" id="ra">0</div></div>
+      <div class="tile"><small>Roti</small><div class="v" id="rr">0</div></div>
+      <div class="tile"><small>Point</small><div class="v" id="rp">0.0</div></div>
+    </div>
+  </section>
+  <section class="card cardf">
+    <span class="sub">VORI → GRAM</span>
+    <div class="tiles4">
+      <div class="tile"><small>Vori</small><input class="in" id="v" data-pad="Vori" inputmode="none" placeholder="0"></div>
+      <div class="tile"><small>Ana</small><input class="in" id="a" data-pad="Ana" inputmode="none" placeholder="0"></div>
+      <div class="tile"><small>Roti</small><input class="in" id="r" data-pad="Roti" inputmode="none" placeholder="0"></div>
+      <div class="tile"><small>Point</small><input class="in" id="p" data-pad="Point" inputmode="none" placeholder="0"></div>
+    </div>
+    <div class="tile tall"><small>Total grams</small><div class="v" id="rg">0.000</div></div>
+  </section>
+  <p class="note">1 vori = 16 ana = 96 roti = 960 point = 11.664 g</p>
+</main>
+<script>
+(() => {
+  const { $, store } = VORX;
+  const G = 11.664, PT = 0.01215, PV = 960;          // grams per vori, grams per point, points per vori
+  const IDS = ['g', 'v', 'a', 'r', 'p'], S = store.get('conv', {});
+  const N = id => parseFloat($('#' + id).value) || 0;
+  IDS.forEach(id => { if (S[id] != null) $('#' + id).value = S[id]; });
+  function toTrad() {
+    const pts = Math.round(N('g') / PT * 10) / 10;     // whole-number maths avoids float floor errors
+    const v = Math.floor(pts / PV); let r = pts - v * PV;
+    const a = Math.floor(r / 60); r -= a * 60;
+    const ro = Math.floor(r / 10), p = r - ro * 10;
+    $('#rv').textContent = v; $('#ra').textContent = a; $('#rr').textContent = ro; $('#rp').textContent = p.toFixed(1);
+  }
+  function toGram() {
+    const t = N('v') * G + N('a') * 0.729 + N('r') * 0.1215 + N('p') * PT;
+    $('#rg').textContent = t.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  }
+  document.addEventListener('input', e => {
+    if (IDS.includes(e.target.id)) { S[e.target.id] = e.target.value; store.set('conv', S); }
+    toTrad(); toGram();
+  });
+  toTrad(); toGram();
+})();
+</script>
+</body>
+</html>

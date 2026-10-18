@@ -1,0 +1,7 @@
+{
+  "name": "vorx-pro-terminal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VORX Pro Terminal: mobile-first PWA for jewelry showroom and bullion trading",
+  "scripts": { "start": "npx serve ." }
+}
