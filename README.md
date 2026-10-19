@@ -1,5 +1,5 @@
 # VORX Pro Terminal
-
+<!—-
 Mobile-first PWA for jewelry showroom and bullion work. Plain HTML, CSS and JavaScript, no build step.
 
 ## Pages
@@ -24,3 +24,4 @@ Shared code lives in `vorx.css` and `vorx.js` (header, menu, numpad, theme, savi
 - Formulas: 1 vori = 11.664 g; rate = ((oz x 3.674 / 31.1035 x purity) + MC) x 11.664 x Dh + CR + MG.
 - Live gold price comes from `api.gold-api.com` (free, no key). If the price shows OFFLINE on your site, swap `FEED` in `index.html` for another source.
 - Change the cache name in `service-worker.js` (`vorx-v1`) whenever you publish updates.
+—>
