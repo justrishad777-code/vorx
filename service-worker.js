@@ -1,5 +1,5 @@
 /* VORX service worker: offline shell, fresh code when online, live gold feed never cached */
-const CACHE = 'vorx-v1';
+const CACHE = 'vorx-v2';
 const ASSETS = ['./', './index.html', './rate.html', './karat.html', './price.html', './converter.html', './casio.html', './settings.html',
   './vorx.css', './vorx.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png', './logo.svg'];
 

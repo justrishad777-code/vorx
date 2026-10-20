@@ -68,6 +68,7 @@
   }
 
   function init() {
+    if (document.body.classList.contains('fit')) document.documentElement.classList.add('fit');
     const page = document.body.dataset.page, title = document.body.dataset.title || 'VORX';
     document.body.insertAdjacentHTML('afterbegin',
       `<header class="top"><button class="tear" id="mb" aria-label="Menu" aria-expanded="false"><i></i></button><h1>${title}</h1><a class="mark" href="index.html" aria-label="VORX home">${LOGO}</a></header>
