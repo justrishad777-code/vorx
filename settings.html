@@ -33,6 +33,7 @@
     <div class="hd"><b>APP</b></div>
     <div class="two"><button class="btn" id="inst">Install app</button><button class="btn ghost" id="clr">Clear cache</button></div>
     <p class="note" id="hint" style="margin-top:10px">If the app feels slow or does not update, clear the cache.</p>
+    <p class="note" id="off" style="margin-top:4px"></p>
     <p class="note" style="margin-top:4px">VORX Pro Terminal · v1.0</p>
   </section>
   <section class="card">
@@ -71,6 +72,13 @@
     VORX.installEvt.prompt(); await VORX.installEvt.userChoice; VORX.installEvt = null; sync();
   };
   window.addEventListener('vorx-install', sync); sync();
+  (async () => {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration(); let n = 0;
+      for (const k of await caches.keys()) n += (await (await caches.open(k)).keys()).length;
+      $('#off').textContent = reg && n >= 10 ? `Offline ready (${n} files saved)` : 'Offline not ready: open the app online once and wait a few seconds';
+    } catch (e) { $('#off').textContent = 'Offline mode is not supported here'; }
+  })();
   const gap = $('#gap'); gap.value = store.get('gap', 0);
   const paintGap = () => { $('#gv').textContent = gap.value + ' px'; root.style.setProperty('--gap', gap.value + 'px'); };
   gap.oninput = () => { paintGap(); store.set('gap', +gap.value); }; paintGap();
