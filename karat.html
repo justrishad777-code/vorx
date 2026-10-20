@@ -17,7 +17,7 @@
 .mh,.mr{display:grid;grid-template-columns:.7fr 1fr 1fr 1.5fr;text-align:center}
 .mh{padding:0 6px 6px;font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--mut)}
 .mr{align-items:center;padding:0 6px;color:var(--txt);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(22,6,36,.4);border:1px solid var(--line);border-radius:14px 6px 14px 6px;transition:.2s}
-.mr b{text-align:left;color:var(--gold)}.mr em{font-style:normal;font-weight:900;color:var(--gold2)}
+.mr b{text-align:left;color:var(--gold)}.pu.tg{text-decoration:underline dashed rgba(240,185,11,.7);text-underline-offset:4px}.mr em{font-style:normal;font-weight:900;color:var(--gold2)}
 .mr.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,rgba(22,6,36,.4));box-shadow:0 0 14px rgba(240,185,11,.25)}
 </style>
 <script src="vorx.js"></script>
@@ -36,21 +36,39 @@
     <div class="mh"><span>KARAT</span><span>PURITY</span><span>FINENESS</span><span>SAME GOLD (g)</span></div>
     <div id="mx"></div>
   </section>
-  <p class="note">Tap a karat to say what your weight is. The last column is the weight of each karat that holds the same pure gold.</p>
+  <p class="note">Tap a karat to say what your weight is. Tap the 22K or 21K purity to switch it (same as the Bullion page). Pure gold = weight x purity.</p>
 </main>
 <script>
 (() => {
   const { $, $$, store } = VORX, K = [24, 22, 21, 18, 14, 10, 9], VORI = 11.664;
+  /* 22K and 21K use the same market purity as the Bullion page; tap it to switch between the two variants */
+  const VAR = { 22: [0.926, 0.920], 21: [0.885, 0.880] }, RP = (store.get('rate', {}).p) || {};
+  const PUR = { 22: RP[22] || 0.926, 21: RP[21] || 0.885 };
+  const pur = k => PUR[k] || k / 24;
   const S = Object.assign({ w: '', sel: 22 }, store.get('karat', {}));
   $('#w').value = S.w;
-  $('#mx').innerHTML = K.map(k => `<button class="mr" data-k="${k}"><b>${k}K</b><span>${(k / 24 * 100).toFixed(1)}%</span><span>${Math.round(k / 24 * 1000)}</span><em>0.000</em></button>`).join('');
+  $('#mx').innerHTML = K.map(k => `<button class="mr" data-k="${k}"><b>${k}K</b><span class="pu${VAR[k] ? ' tg' : ''}" data-k="${k}"></span><span class="fi"></span><em>0.000</em></button>`).join('');
   function calc() {
-    const pure = (parseFloat($('#w').value) || 0) * S.sel / 24;
+    const pure = (parseFloat($('#w').value) || 0) * pur(S.sel);
     $('#pg').textContent = pure.toFixed(3); $('#pv').textContent = (pure / VORI).toFixed(4); $('#sk').textContent = S.sel + 'K';
-    $$('.mr').forEach(r => { const k = +r.dataset.k; r.classList.toggle('on', k === S.sel); r.querySelector('em').textContent = (pure / (k / 24)).toFixed(3); });
+    $$('.mr').forEach(r => {
+      const k = +r.dataset.k;
+      r.classList.toggle('on', k === S.sel);
+      r.querySelector('.pu').textContent = (pur(k) * 100).toFixed(1) + '%';
+      r.querySelector('.fi').textContent = Math.round(pur(k) * 1000);
+      r.querySelector('em').textContent = (pure / pur(k)).toFixed(3);
+    });
   }
   document.addEventListener('input', e => { if (e.target.id === 'w') { S.w = e.target.value; store.set('karat', S); calc(); } });
-  document.addEventListener('click', e => { const r = e.target.closest('.mr'); if (r) { S.sel = +r.dataset.k; store.set('karat', S); VORX.buzz(); calc(); } });
+  document.addEventListener('click', e => {
+    const t = e.target.closest('.tg');
+    if (t) {
+      const k = +t.dataset.k; PUR[k] = PUR[k] === VAR[k][0] ? VAR[k][1] : VAR[k][0];
+      const rr = store.get('rate', {}); rr.p = Object.assign({ 22: 0.926, 21: 0.885 }, rr.p, { [k]: PUR[k] }); store.set('rate', rr);
+      VORX.buzz(); return calc();
+    }
+    const r = e.target.closest('.mr'); if (r) { S.sel = +r.dataset.k; store.set('karat', S); VORX.buzz(); calc(); }
+  });
   calc();
 })();
 </script>
