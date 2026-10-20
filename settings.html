@@ -22,7 +22,7 @@
 </style>
 <script src="vorx.js"></script>
 </head>
-<body class="fit" data-page="settings" data-title="Settings">
+<body data-page="settings" data-title="Settings">
 <main class="wrap">
   <section class="card">
     <div class="hd"><b>THEME</b><button class="edit" id="reset">Reset</button></div>
@@ -34,6 +34,12 @@
     <div class="two"><button class="btn" id="inst">Install app</button><button class="btn ghost" id="clr">Clear cache</button></div>
     <p class="note" id="hint" style="margin-top:10px">If the app feels slow or does not update, clear the cache.</p>
     <p class="note" style="margin-top:4px">VORX Pro Terminal · v1.0</p>
+  </section>
+  <section class="card">
+    <div class="hd"><b>SCREEN FIT</b><span id="gv">0 px</span></div>
+    <input type="range" id="gap" min="0" max="120" step="2" value="0" style="width:100%" aria-label="Bottom space">
+    <p class="note" style="margin-top:8px">If the bottom of any page is cut off, raise this until everything fits.</p>
+    <p class="note" id="dbg" style="margin-top:4px"></p>
   </section>
 </main>
 <script>
@@ -65,6 +71,10 @@
     VORX.installEvt.prompt(); await VORX.installEvt.userChoice; VORX.installEvt = null; sync();
   };
   window.addEventListener('vorx-install', sync); sync();
+  const gap = $('#gap'); gap.value = store.get('gap', 0);
+  const paintGap = () => { $('#gv').textContent = gap.value + ' px'; root.style.setProperty('--gap', gap.value + 'px'); };
+  gap.oninput = () => { paintGap(); store.set('gap', +gap.value); }; paintGap();
+  $('#dbg').textContent = `Viewport ${innerWidth}x${innerHeight}, screen ${screen.width}x${screen.height}, ratio ${devicePixelRatio}`;
 })();
 </script>
 </body>
