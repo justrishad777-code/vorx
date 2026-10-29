@@ -33,6 +33,10 @@
 .cv.big{padding:6px;font-size:17px;border-radius:12px;background:rgba(22,6,36,.5)}.cv.up{color:var(--up)}.cv.down{color:var(--down)}
 #show{flex:none;min-height:46px}
 .r{display:contents}
+.ce{position:relative;min-width:0}
+.fit .cg .in.cvi{padding:2px 20px 2px 4px;font-size:13px;font-weight:900;color:var(--gold);text-align:center}
+.fit .cg .in.cvi:not([readonly]){color:var(--txt)}
+.edit.mini{position:absolute;top:50%;right:1px;translate:0 -50%;padding:1px 5px;font-size:11px;line-height:1.4}
 #cmp[data-view="22"] .r:not(.v22),#cmp[data-view="21"] .r:not(.v21),#cmp[data-view="both"] .r:not(.vb){display:none}
 .both .tile{padding:5px 6px}.both .tile .in,.both .tile .in.on{font-size:13px}
 #kts:not(.both) .kh .sub{font-size:14px}
@@ -111,7 +115,7 @@
   KS.forEach(k => Object.keys(F).forEach(f => { rows += row('v' + k, F[f], inp('b', f, k, F[f]) + inp('s', f, k, F[f])); }));
   KS.forEach(k => {
     rows += row(`v${k} vb`, k + 'K wt g', `<input class="in" id="cw${k}" data-pad="Weight (gm) \u00b7 ${k}K" data-save inputmode="none" autocomplete="off" placeholder="0" style="grid-column:2/4">`);
-    rows += row(`v${k} vb`, k + 'K bhori', `<b class="cv" id="rb${k}">0.00</b><b class="cv" id="rs${k}">0.00</b>`);
+    rows += row(`v${k} vb`, k + 'K bhori', `<div class="ce"><input class="in cvi" id="rb${k}" readonly inputmode="none" data-pad="1 Bhori \u00b7 Buy ${k}K" aria-label="Buy bhori rate"><button class="edit mini" data-e="rb${k}" aria-label="Edit buy bhori rate">\u270e</button></div><div class="ce"><input class="in cvi" id="rs${k}" readonly inputmode="none" data-pad="1 Bhori \u00b7 Sell ${k}K" aria-label="Sell bhori rate"><button class="edit mini" data-e="rs${k}" aria-label="Edit sell bhori rate">\u270e</button></div>`);
     rows += row(`v${k} vb`, k + 'K total', `<b class="cv" id="tb${k}">0.00</b><b class="cv" id="ts${k}">0.00</b>`);
     rows += row('v' + k, 'Gain', `<b class="cv big" id="gt${k}" style="grid-column:2/4">0.00</b>`);
   });
@@ -147,9 +151,10 @@
     KS.forEach(k => {
       const p = S.p[k], w = num('cw' + k);
       const rate = sd => ((g(sd, 'oz', '') * AED / OZ * p + g(sd, 'mc', k)) * VORI * (g(sd, 'dh', k) || 1)) + g(sd, 'cr', k) + g(sd, 'mg', k);
-      const rb = rate('b'), rs = rate('s'), tb = rb * w / VORI, ts = rs * w / VORI, d = ts - tb;
+      const rb0 = rate('b'), rs0 = rate('s'), rb = ovr['rb' + k] != null ? ovr['rb' + k] : rb0, rs = ovr['rs' + k] != null ? ovr['rs' + k] : rs0;   /* a typed bhori rate replaces the calculated one */
+      const tb = rb * w / VORI, ts = rs * w / VORI, d = ts - tb;
       TB += tb; TS += ts;
-      $('#rb' + k).textContent = fmt(rb); $('#rs' + k).textContent = fmt(rs); $('#tb' + k).textContent = fmt(tb); $('#ts' + k).textContent = fmt(ts);
+      show('rb' + k, rb0); show('rs' + k, rs0); $('#tb' + k).textContent = fmt(tb); $('#ts' + k).textContent = fmt(ts);
       const gt = $('#gt' + k); gt.className = 'cv big ' + (d >= 0 ? 'up' : 'down'); gt.textContent = signed(d) + '  (' + signed(rs - rb) + ' / bhori)';
       Object.keys(F).forEach(f => { $('#s-' + f + k).placeholder = $('#b-' + f + k).value || (f === 'cr' ? 'CR \u00f78.57' : F[f]); });
     });
