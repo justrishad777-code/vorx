@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#160624">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>VORX Pro Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--w:54px;--base:#160624;--gold:#f0b90b;--gold2:#ffe270;--mag:#d902ee;--txt:#f6f0fd;--mut:rgba(246,240,253,.72);--up:#34d399;--down:#fb7185;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--base)}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;overflow:hidden;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;position:fixed;top:env(safe-area-inset-top,0px);right:0;bottom:calc(env(safe-area-inset-bottom,0px) + var(--gap,0px));left:0;display:flex;flex-direction:column;overflow:hidden;background:var(--base);color:var(--txt);font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+/* header */
+.top{position:absolute;top:14px;left:16px;right:16px;z-index:60;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.top>*{pointer-events:auto}
+.tear{width:42px;height:42px;display:grid;place-items:center;color:var(--gold);background:rgba(240,185,11,.14);border:1px solid rgba(240,185,11,.4);border-radius:0 50% 50% 50%;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 18px rgba(240,185,11,.32);transition:border-radius .45s,transform .3s}
+.tear:active{transform:scale(.88)}
+.menu-open .tear{border-radius:50% 50% 50% 0}
+.tear i,.tear i::before,.tear i::after{display:block;width:18px;height:2px;border-radius:2px;background:currentColor;transition:.3s}
+.tear i{position:relative}.tear i::before,.tear i::after{content:"";position:absolute;left:0}
+.tear i::before{top:-6px}.tear i::after{top:6px;width:11px}
+.menu-open .tear i{background:transparent}
+.menu-open .tear i::before{top:0;transform:rotate(45deg)}
+.menu-open .tear i::after{top:0;width:18px;transform:rotate(-45deg)}
+.brand{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:900;letter-spacing:.24em;color:var(--gold);background:rgba(22,6,36,.7);border:1px solid rgba(240,185,11,.4);border-radius:14px 4px 14px 4px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+body{--c:#9ca3af}body[data-m=live]{--c:var(--up)}body[data-m=closed]{--c:var(--down)}
+.brand b{width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);transition:background .4s}
+body[data-m=live] .brand b{animation:pulse 1.8s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+/* hero */
+.hero{position:relative;flex:none;padding:68px 24px calc(var(--w) + 24px);text-align:center;background:radial-gradient(circle at 50% 32%,rgba(240,185,11,.26),rgba(217,2,238,.14) 55%,transparent 80%);overflow:hidden;transition:padding .4s}
+.hero::before{content:"";position:absolute;inset:0;opacity:.07;background:repeating-linear-gradient(45deg,var(--gold) 0 1px,transparent 1px 20px)}
+.hero>*{position:relative}
+.lbl{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+.price{margin:0;font-size:clamp(34px,11vw,52px);font-weight:900;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,#fffdf5,var(--gold2) 45%,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 18px rgba(240,185,11,.38))}
+.price small{font-size:.5em;letter-spacing:0}
+.badge{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:5px 14px;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;border-radius:12px 4px 12px 4px;border:1px solid;animation:none}
+.badge i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite}
+.badge.up{color:#6ee7b7;background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4)}
+.badge.down{color:#fda4af;background:rgba(251,113,133,.15);border-color:rgba(251,113,133,.4)}
+.badge.shut{color:#fda4af;background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.38)}
+.badge.off{color:var(--mut);background:rgba(246,240,253,.08);border-color:rgba(246,240,253,.22)}
+.badge.shut i,.badge.off i{animation:none}
+.pxrow{display:flex;align-items:center;justify-content:center;gap:10px}
+.sig{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 42%,transparent);border-radius:10px 4px 10px 4px}
+.sig i{width:7px;height:7px;border-radius:50%;background:currentColor}
+body[data-m=live] .sig i{animation:pulse 1.6s infinite}
+.badge.f{animation:flash .9s}
+body:not([data-m=live]) .badge i{animation:none}
+.stats{margin-top:8px;min-height:14px;font-size:11px;font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums}
+.typing .stats{display:none}
+.bdrow{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px}.bdrow .badge{margin-top:0}
+.rfs{width:34px;height:34px;display:grid;place-items:center;font-size:18px;line-height:1;color:var(--gold);background:rgba(240,185,11,.14);border:1px solid rgba(240,185,11,.4);border-radius:50%;transition:transform .15s}
+.rfs:active{transform:scale(.88)}.rfs.spin{animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+@keyframes flash{0%{box-shadow:0 0 0 0 currentColor}100%{box-shadow:0 0 0 14px transparent}}
+
+/* panel */
+.panel{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;margin-top:calc(var(--w) * -1);padding:calc(var(--w) + 4px) 16px 14px;background:linear-gradient(180deg,rgba(214,200,235,.3),rgba(214,200,235,.14)),var(--base);--wv:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 120' preserveAspectRatio='none'%3E%3Cpath d='M0,112 C450,120 1050,8 1440,8 V120 H0 Z'/%3E%3C/svg%3E");-webkit-mask:var(--wv) top / 100% var(--w) no-repeat,linear-gradient(#000,#000) 0 calc(var(--w) - 1px) / 100% calc(100% - var(--w) + 1px) no-repeat;mask:var(--wv) top / 100% var(--w) no-repeat,linear-gradient(#000,#000) 0 calc(var(--w) - 1px) / 100% calc(100% - var(--w) + 1px) no-repeat;overflow:hidden;transition:padding-bottom .4s}
+.orb{position:absolute;border-radius:50%;filter:blur(48px);pointer-events:none}
+.o1{top:0;left:10px;width:190px;height:190px;background:rgba(240,185,11,.35)}
+.o2{bottom:10px;right:0;width:210px;height:210px;background:rgba(217,2,238,.3)}
+.stack{position:relative;z-index:1;width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.fold{display:grid;grid-template-rows:1fr;transition:grid-template-rows .4s ease,opacity .3s,margin .4s}
+.fold>.in{min-height:0;overflow:hidden;padding:2px}
+.typing .fold{grid-template-rows:0fr;opacity:0;pointer-events:none}
+.typing .fold:first-child{margin-bottom:-12px}.typing .fold:last-child{margin-top:-12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col{display:flex;flex-direction:column;gap:10px}
+
+.card{position:relative;text-align:left;border:1.5px solid;padding:14px 16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:var(--r1);animation:rise .6s cubic-bezier(.2,.8,.2,1) both,morph var(--d,7s) ease-in-out infinite;animation-delay:calc(var(--i,0)*80ms),0s;transition:transform .2s}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(125deg,rgba(255,255,255,.2),transparent 42%)}
+.card:active{transform:scale(.96)}
+@keyframes morph{0%,100%{border-radius:var(--r1)}50%{border-radius:var(--r2)}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+.card h3,.card h2{margin:0;font-size:15px;font-weight:900;letter-spacing:.08em}
+.card p{margin:3px 0 0;font-size:11px;font-weight:600;color:var(--mut)}
+.bullion{--r1:34px 22px 26px 34px/32px 22px 34px 26px;--r2:22px 34px 34px 22px/24px 34px 22px 34px;--d:7s;min-height:118px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(145deg,rgba(240,185,11,.3),rgba(22,6,36,.6));border-color:rgba(240,185,11,.5);box-shadow:inset 0 0 16px rgba(240,185,11,.15)}
+.karat,.valuer{--d:6s;flex:1;display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
+.karat{--r1:28px 14px 28px 16px/22px 14px 22px 16px;--r2:16px 28px 14px 28px/14px 22px 14px 22px;background:linear-gradient(145deg,rgba(22,6,36,.6),rgba(240,185,11,.26));border-color:rgba(240,185,11,.45)}
+.valuer{--r1:16px 28px 14px 28px/16px 22px 14px 22px;--r2:28px 16px 28px 14px/22px 14px 22px 14px;--d:7.5s;background:linear-gradient(145deg,rgba(22,6,36,.6),rgba(217,2,238,.28));border-color:rgba(217,2,238,.45)}
+.karat h3,.valuer h3{font-size:13px}.karat p,.valuer p{font-size:10px}
+.ico{flex:none;width:34px;height:34px;display:grid;place-items:center;font-size:13px;font-weight:900;color:var(--gold);background:rgba(240,185,11,.2);border:1px solid rgba(240,185,11,.55);border-radius:40% 60% 70% 30%/50% 60% 30% 60%}
+.karat .ico,.valuer .ico{width:28px;height:28px;border-radius:50%;font-size:12px}
+.valuer .ico{background:rgba(217,2,238,.25);border-color:rgba(217,2,238,.55)}
+.gold{color:var(--gold)}
+.matrix{--r1:22px 30px 32px 24px/18px 22px 24px 20px;--r2:30px 20px 24px 32px/22px 18px 20px 24px;--d:8s;width:100%;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(22,6,36,.62),rgba(240,185,11,.3));border-color:rgba(240,185,11,.45);box-shadow:inset 0 -8px 16px rgba(240,185,11,.14)}
+.matrix .ico{border-radius:30% 70% 70% 30%/30% 30% 70% 70%}
+
+/* converter */
+.conv{--r1:30px 18px 32px 20px/24px 18px 26px 20px;--r2:20px 32px 20px 30px/20px 26px 18px 24px;--d:8.5s;--i:3;padding:12px 14px 14px;background:linear-gradient(135deg,rgba(22,6,36,.5),rgba(217,2,238,.2) 50%,rgba(240,185,11,.2));border-color:rgba(240,185,11,.45);box-shadow:0 10px 26px rgba(22,6,36,.25),inset 0 0 20px rgba(255,255,255,.1)}
+.conv header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.conv h2{font-size:12px;position:relative;z-index:1}
+.chip{position:relative;z-index:1;padding:3px 10px;font-size:10px;font-weight:800;color:var(--base);background:var(--gold);border-radius:99px}
+.flds{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fld{position:relative;z-index:1;text-align:left;padding:9px 14px 10px;background:rgba(22,6,36,.74);border:1.5px solid rgba(240,185,11,.35);border-radius:18px 10px 18px 12px;transition:border-color .25s,box-shadow .25s}
+.fld+.fld{border-color:rgba(217,2,238,.4);border-radius:10px 18px 12px 18px}
+.fld small{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+.val{display:block;margin-top:2px;font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fld.on{border-color:var(--gold);box-shadow:0 0 0 3px rgba(240,185,11,.16),0 0 22px rgba(240,185,11,.3)}
+.fld+.fld.on{border-color:var(--mag);box-shadow:0 0 0 3px rgba(217,2,238,.18),0 0 22px rgba(217,2,238,.34)}
+.typing .fld.on .val::after{content:"";display:inline-block;width:2px;height:.95em;margin-left:2px;vertical-align:-2px;background:currentColor;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.swap{position:absolute;z-index:2;left:50%;top:50%;translate:-50% -50%;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:900;color:var(--base);background:var(--gold);box-shadow:0 0 0 4px rgba(22,6,36,.6);pointer-events:none}
+.typing .swap{animation:spin .5s}
+@keyframes spin{to{rotate:180deg}}
+
+/* numpad */
+#pad{position:fixed;left:0;right:0;bottom:0;z-index:45;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(22,6,36,.97);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);border-top:1.5px solid rgba(240,185,11,.4);border-radius:28px 28px 0 0;box-shadow:0 -16px 40px rgba(0,0,0,.6);transform:translateY(105%);visibility:hidden;transition:transform .35s cubic-bezier(.2,.9,.25,1),visibility 0s .35s}
+.typing #pad{transform:none;visibility:visible;transition-delay:0s}
+.padh{display:flex;justify-content:space-between;align-items:center;margin:0 2px 10px}
+.padh span{font-size:12px;font-weight:800;color:var(--gold)}
+.padh div{display:flex;gap:8px}
+.pill{border:1px solid;border-radius:99px;padding:6px 16px;font-size:12px;font-weight:800}
+.clr{color:#fda4af;background:rgba(251,113,133,.16);border-color:rgba(251,113,133,.4)}
+.done{color:var(--base);background:var(--gold);border-color:var(--gold)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:420px;margin:0 auto}
+.k{height:46px;font-size:20px;font-weight:800;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.26);border-radius:20px 8px 20px 8px;transition:transform .1s,background .1s}
+.k:active{transform:scale(.93);background:rgba(240,185,11,.34)}
+.k.del{color:#fda4af}
+
+/* drawer */
+#scrim{position:fixed;inset:0;z-index:40;background:rgba(10,2,18,.28);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+#drawer{position:fixed;top:calc(env(safe-area-inset-top,0px) + 66px);left:16px;z-index:50;width:196px;display:flex;flex-direction:column;gap:2px;padding:8px;background:linear-gradient(150deg,rgba(60,20,92,.5),rgba(22,6,36,.4));backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(240,185,11,.32);border-radius:6px 26px 26px 26px;box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.14);transform-origin:21px -31px;transform:scale(.4) translateY(-14px);opacity:0;visibility:hidden;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .25s,visibility 0s .45s}
+.menu-open #drawer{transform:none;opacity:1;visibility:visible;transition-delay:0s}
+.menu-open #scrim{opacity:1;visibility:visible}
+.nav{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;text-align:left;font-size:12px;font-weight:800;letter-spacing:.1em;background:transparent;border:0;border-radius:16px 6px 16px 6px;opacity:0;transform:scale(.85) translateY(-6px);transition:opacity .3s,transform .4s cubic-bezier(.34,1.56,.64,1),background .2s}
+.menu-open .nav{opacity:1;transform:none;transition-delay:calc(var(--i)*40ms + 80ms),calc(var(--i)*40ms + 80ms),0s}
+.nav small{display:none}
+.nav:active{background:rgba(240,185,11,.2)}
+.nav.cur{color:var(--gold);background:rgba(240,185,11,.13);box-shadow:inset 3px 0 var(--gold)}
+.nav .ico{width:26px;height:26px;font-size:10px}
+.foot{display:none}
+
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);z-index:70;translate:-50% 16px;padding:10px 18px;max-width:86vw;font-size:12px;font-weight:700;text-align:center;color:var(--base);background:var(--gold);border-radius:16px 6px 16px 6px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.3s}
+#toast.show{opacity:1;translate:-50% 0}
+
+@media(max-height:700px){:root{--w:40px}.hero{padding:60px 24px calc(var(--w) + 14px)}.price{font-size:40px}.bdrow{margin-top:8px}.stats{margin-top:5px}.bullion{min-height:104px}.typing .bdrow,.typing .lbl{display:none}.typing .hero{padding-bottom:calc(var(--w) + 6px)}}
+@media(max-height:640px){.stats{display:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="tear" id="menuBtn" aria-label="Open menu" aria-expanded="false"><i></i></button>
+  <div class="brand"><svg width="20" height="20" viewBox="0 0 512 512" aria-hidden="true"><polygon points="112,150 188,150 256,330 256,398 220,398" fill="#f6c935"/><polygon points="400,150 324,150 256,330 256,398 292,398" fill="#b8860b"/><polygon points="256,86 294,128 256,170 218,128" fill="#e63cf3"/></svg>VORX<b></b></div>
+</header>
+
+<div id="scrim"></div>
+<nav id="drawer" aria-label="Modules">
+  <button class="nav cur" data-go="home" style="--i:0"><span class="ico">V</span><span>VORX<small>Home and overview</small></span></button>
+  <button class="nav" data-go="bullion" style="--i:1"><span class="ico">Au</span><span>BULLION<small>Studio and invoices</small></span></button>
+  <button class="nav" data-go="karat" style="--i:2"><span class="ico">K</span><span>KARAT<small>Scale and purity matrix</small></span></button>
+  <button class="nav" data-go="valuer" style="--i:3"><span class="ico">$</span><span>VALUER<small>Spot valuation</small></span></button>
+  <button class="nav" data-go="converter" style="--i:4"><span class="ico">⇆</span><span>CONVERTER<small>Weight conversion</small></span></button>
+  <button class="nav" data-go="matrix" style="--i:5"><span class="ico">#</span><span>MATRIX<small>Algorithmic pricing desk</small></span></button>
+  <button class="nav" data-go="settings" style="--i:6"><span class="ico">⚙</span><span>SETTINGS<small>App configuration</small></span></button>
+  <div class="foot">VORX Pro Terminal · 1 vori = 11.664 g</div>
+</nav>
+
+<section class="hero">
+  <p class="lbl">Gold spot · USD per oz</p>
+  <div class="pxrow"><h1 class="price" id="px">$—</h1><span class="sig" id="sig"><i></i><b id="sigT">…</b></span></div>
+  <div class="bdrow"><div class="badge off" id="bd"><i></i>Connecting…</div><button class="rfs" id="rf" aria-label="Refresh gold price">↻</button></div>
+  <div class="stats" id="st"></div>
+</section>
+
+
+<main class="panel">
+  <div class="orb o1"></div><div class="orb o2"></div>
+  <div class="stack">
+    <div class="fold"><div class="in"><div class="row">
+      <button class="card bullion" data-go="bullion" style="--i:0">
+        <span class="ico">Au</span>
+        <span><h3 class="gold">BULLION</h3><p>Live rates and invoices</p></span>
+      </button>
+      <div class="col">
+        <button class="card karat" data-go="karat" style="--i:1">
+          <span><h3 class="gold">KARAT</h3><p>Purity scale</p></span><span class="ico">K</span>
+        </button>
+        <button class="card valuer" data-go="valuer" style="--i:2">
+          <span><h3>VALUER</h3><p>Spot valuation</p></span><span class="ico">$</span>
+        </button>
+      </div>
+    </div></div></div>
+
+    <section class="card conv" aria-label="Converter">
+      <header><h2>CONVERTER</h2><span class="chip">Gram ⇆ Vori</span></header>
+      <div class="flds">
+        <button class="fld on" id="gf" data-f="gram"><small>Gram (g)</small><span class="val" id="gv">0</span></button>
+        <button class="fld" id="vf" data-f="vori"><small>Vori (v)</small><span class="val" id="vv">0</span></button>
+        <span class="swap">⇆</span>
+      </div>
+    </section>
+
+    <div class="fold"><div class="in">
+      <button class="card matrix" data-go="matrix" style="--i:4">
+        <span><h3 class="gold">MATRIX</h3><p>Algorithmic pricing desk</p></span>
+        <span class="ico"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>
+      </button>
+    </div></div>
+  </div>
+</main>
+
+<div id="pad" role="group" aria-label="Number pad">
+  <div class="padh"><span id="padT">Enter gram (g)</span><div><button class="pill clr" id="clr">Clear</button><button class="pill done" id="done">Done</button></div></div>
+  <div class="keys" id="keys"></div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+const DEMO = false;
+try { const g = JSON.parse(localStorage.getItem('vorx.gap') || '0'); if (g) document.documentElement.style.setProperty('--gap', g + 'px'); } catch (e) {}
+try { const t = JSON.parse(localStorage.getItem('vorx.theme') || '{}'); for (const k in t) document.documentElement.style.setProperty('--' + k, t[k]); } catch (e) {}
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+const DIV = 11.664, KEY = 'vorx.dash';
+const ROUTES = {home:'index.html',bullion:'rate.html',karat:'karat.html',valuer:'price.html',converter:'converter.html',matrix:'casio.html',settings:'settings.html'};
+const $ = s => document.querySelector(s);
+const buzz = n => { try { navigator.vibrate && navigator.vibrate(n || 10); } catch (e) {} };
+const B = document.body;
+
+/* toast + navigation */
+let tt;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),1800); }
+function go(k){
+  buzz(12); setMenu(false);
+  if (k === 'home') return;
+  if (DEMO) toast(k.toUpperCase() + ' opens ' + ROUTES[k] + ' in your live app');
+  else location.href = ROUTES[k];
+}
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go);
+  if (B.classList.contains('typing') && !e.target.closest('#pad,.fld')) closePad();
+});
+
+/* drawer */
+function setMenu(o){ B.classList.toggle('menu-open',o); $('#menuBtn').setAttribute('aria-expanded',o); if(o) closePad(); }
+$('#menuBtn').onclick = () => { buzz(8); setMenu(!B.classList.contains('menu-open')); };
+$('#scrim').onclick = () => setMenu(false);
+
+/* converter state, saved between visits */
+const st = { gram:'', vori:'', on:'gram' };
+try { Object.assign(st, JSON.parse(localStorage.getItem(KEY) || '{}'), { on:'gram' }); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ gram:st.gram, vori:st.vori })); } catch (e) {} };
+const fmt = n => String(+n.toFixed(3));
+
+function paint(){
+  $('#gv').textContent = st.gram || '0';
+  $('#vv').textContent = st.vori || '0';
+  $('#gf').classList.toggle('on', st.on === 'gram');
+  $('#vf').classList.toggle('on', st.on === 'vori');
+  $('#padT').textContent = st.on === 'gram' ? 'Enter gram (g)' : 'Enter vori (v)';
+}
+function sync(){
+  const a = st.on, o = a === 'gram' ? 'vori' : 'gram', n = parseFloat(st[a]);
+  st[o] = isNaN(n) ? '' : fmt(a === 'gram' ? n / DIV : n * DIV);
+  paint(); save();
+}
+function press(k){
+  buzz(10);
+  let v = st[st.on];
+  if (k === 'del') v = v.slice(0, -1);
+  else {
+    if (k === '.') { if (v.includes('.')) return; if (!v) v = '0'; }
+    if (v.replace('.', '').length >= 9) return;
+    v = (v === '0' && k !== '.') ? k : v + k;
+  }
+  st[st.on] = v; sync();
+}
+function openPad(f){
+  st.on = f; paint(); setMenu(false);
+  B.classList.add('typing');
+  $('.panel').style.paddingBottom = ($('#pad').offsetHeight + 10) + 'px';
+}
+function closePad(){ B.classList.remove('typing'); $('.panel').style.paddingBottom = ''; }
+
+'123456789.0'.split('').concat('del').forEach(k => {
+  const b = document.createElement('button');
+  b.className = 'k' + (k === 'del' ? ' del' : '');
+  b.textContent = k === 'del' ? '⌫' : k;
+  b.setAttribute('aria-label', k === 'del' ? 'Delete' : k);
+  b.onclick = () => press(k);
+  $('#keys').appendChild(b);
+});
+document.querySelectorAll('.fld').forEach(f => f.onclick = () => { buzz(8); openPad(f.dataset.f); });
+$('#clr').onclick = () => { buzz(14); st.gram = st.vori = ''; paint(); save(); };
+$('#done').onclick = () => { buzz(8); closePad(); };
+paint();
+
+/* live gold spot (USD per oz) from gold-api.com: free, no key. Needs your own site; Claude previews block it */
+const FEED = 'https://api.gold-api.com/price/XAU', PXKEY = 'vorx.px', SAMPLE = 4380.04;
+let saved = {}; try { saved = JSON.parse(localStorage.getItem(PXKEY) || '{}'); } catch (e) {}
+const persist = () => { try { localStorage.setItem(PXKEY, JSON.stringify(saved)); } catch (e) {} };
+let OFF = 0;   /* Settings > Rate: difference between the free feed and the app you follow (Kitco, TradingView, Webull) */
+function syncOff() {
+  let o = 0; try { o = parseFloat(JSON.parse(localStorage.getItem('vorx.off') || '0')) || 0; } catch (e) {}
+  OFF = o; const d = o - (saved.off || 0); if (!d) return;
+  ['last', 'close'].forEach(k => { if (saved[k]) saved[k].p += d; });
+  if (saved.sess) { saved.sess.open += d; saved.sess.hi += d; saved.sess.lo += d; }
+  saved.off = o; if (saved.last) px = saved.last.p; persist();
+}
+let px = saved.last ? saved.last.p : null, ts = saved.last ? saved.last.t : null, mode = 'offline', poll;
+
+/* spot gold trades 24/5: closed Fri 17:00 to Sun 18:00 New York time, plus a 17:00 to 18:00 daily break */
+function marketOpen(){
+  const f = new Intl.DateTimeFormat('en-US', { timeZone:'America/New_York', weekday:'short', hour:'numeric', hourCycle:'h23' }).formatToParts(new Date());
+  const wd = f.find(x => x.type === 'weekday').value, h = +f.find(x => x.type === 'hour').value;
+  if (wd === 'Sat' || h === 17) return false;
+  if (wd === 'Fri' && h >= 17) return false;
+  if (wd === 'Sun' && h < 18) return false;
+  return true;
+}
+/* a session runs from 18:00 New York time to 17:00 the next day; the key is the date it started */
+function sessKey(){
+  const f = new Intl.DateTimeFormat('en-US', { timeZone:'America/New_York', year:'numeric', month:'2-digit', day:'2-digit', hour:'numeric', minute:'numeric', hourCycle:'h23' }).formatToParts(new Date());
+  const g = k => parseInt(f.find(x => x.type === k).value, 10), h = g('hour');
+  const day = new Date(Date.UTC(g('year'), g('month') - 1, g('day') - (h < 18 ? 1 : 0)));
+  return { key: day.toISOString().slice(0, 10), mins: (h >= 18 ? h - 18 : h + 6) * 60 + g('minute') };
+}
+const sessOf = () => { const s = saved.sess; return s && (mode === 'live' || (ts && Math.abs(ts - s.t) < 26 * 36e5)) ? s : null; };
+const when = t => new Date(t).toLocaleString([], { weekday:'short', hour:'numeric', minute:'2-digit' });
+
+function renderPx(flash){
+  const shown = px != null ? px : SAMPLE, bd = $('#bd');
+  const [i, d] = shown.toFixed(2).split('.');
+  $('#px').innerHTML = '$' + (+i).toLocaleString('en-US') + '<small>.' + d + '</small>';
+  B.dataset.m = mode;
+  $('#sigT').textContent = mode === 'live' ? 'LIVE' : mode === 'closed' ? 'CLOSED' : 'OFFLINE';
+  const s = sessOf(), df = s ? shown - s.open : null;
+  const chg = df == null ? '' : (df >= 0 ? '+' : '−') + Math.abs(df).toFixed(2) + ' (' + Math.abs(df / s.open * 100).toFixed(2) + '%)';
+  const n = v => v.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  $('#st').textContent = s ? 'Open ' + (s.est ? '≈ ' : '') + n(s.open) + ' · High ' + n(s.hi) + ' · Low ' + n(s.lo) : '';
+  if (mode === 'live') {
+    bd.className = 'badge ' + (df == null || df >= 0 ? 'up' : 'down');
+    bd.innerHTML = '<i></i>' + (chg || 'Live');
+    if (flash) { void bd.offsetWidth; bd.classList.add('f'); }
+  } else if (mode === 'closed' && df != null) {
+    bd.className = 'badge ' + (df >= 0 ? 'up' : 'down');
+    bd.innerHTML = '<i></i>' + chg + ' · Close ' + when(ts);
+  } else if (mode === 'closed') {
+    bd.className = 'badge shut';
+    bd.innerHTML = '<i></i>Last close · ' + (ts ? when(ts) : 'recent');
+  } else {
+    bd.className = 'badge off';
+    bd.innerHTML = '<i></i>' + (px != null ? 'Offline · last saved price' : 'Sample price · live feed not connected');
+  }
+}
+
+async function pull(){
+  clearTimeout(poll); syncOff();
+  try {
+    const r = await fetch(FEED, { cache:'no-store' });
+    if (!r.ok) throw 0;
+    const j = await r.json(), raw = parseFloat(j.price), p = raw + OFF;
+    if (!isFinite(raw)) throw 0;
+    try { localStorage.setItem('vorx.raw', String(raw)); } catch (e) {}
+    const t = Date.parse(j.updatedAt) || Date.now();
+    const live = marketOpen() && Date.now() - t < 20 * 60 * 1000;
+    const was = px;
+    px = p; ts = t; mode = live ? 'live' : 'closed';
+    if (live) {
+      const k = sessKey(), c = saved.sess;
+      if (!c || c.key !== k.key) {
+        const prev = saved.close && Date.now() - saved.close.t < 4 * 864e5;
+        saved.sess = { key:k.key, open: (k.mins < 10 || !prev) ? p : saved.close.p, est: !(k.mins < 10), hi:p, lo:p, t };
+      } else { c.hi = Math.max(c.hi, p); c.lo = Math.min(c.lo, p); c.t = t; }
+      saved.last = { p, t };
+    } else { saved.close = { p, t }; saved.last = { p, t }; }
+    persist(); renderPx(live && was != null && was !== p);
+  } catch (e) {
+    mode = (px != null && !marketOpen()) ? 'closed' : 'offline';
+    renderPx();
+  }
+  poll = setTimeout(pull, mode === 'live' ? 10000 : 60000);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+$('#rf').onclick = async () => {
+  buzz(10); const b = $('#rf'); b.classList.add('spin'); await pull(); b.classList.remove('spin');
+  toast(mode === 'live' ? 'Price updated' : mode === 'closed' ? 'Market closed, showing the last close' : 'Could not reach the price feed');
+};
+syncOff(); renderPx(); pull();
+</script>
+</body>
+</html>
