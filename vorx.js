@@ -13,6 +13,8 @@
   /* theme chosen in Settings applies on every page */
   const theme = store.get('theme', {});
   for (const k in theme) document.documentElement.style.setProperty('--' + k, theme[k]);
+  const gap = store.get('gap', 0);   /* Settings > Screen fit: extra bottom space for phones that report a taller screen than they show */
+  if (gap) document.documentElement.style.setProperty('--gap', gap + 'px');
 
   let tt;
   function toast(msg) {
@@ -29,10 +31,12 @@
 
   /* numpad: replaces the phone keyboard for any [data-pad] field */
   let cur = null;
+  const blurEv = el => document.dispatchEvent(new CustomEvent('padblur', { detail: el }));
   const fields = () => $$('[data-pad]').filter(e => !e.readOnly && e.offsetParent);
   function openPad(el) {
-    if (cur) cur.classList.remove('on');
+    if (cur) { cur.classList.remove('on'); if (cur !== el) blurEv(cur); }
     cur = el; el.classList.add('on');
+    if (el.dataset.conv) el.dataset.fresh = '1';   /* first key replaces the old value */
     document.body.classList.add('padding');
     $('#padt').textContent = el.dataset.pad;
     lift(el);
@@ -51,7 +55,7 @@
     w.style.transform = need ? `translateY(${-need}px)` : '';
   }
   function closePad() {
-    if (cur) cur.classList.remove('on');
+    if (cur) { cur.classList.remove('on'); blurEv(cur); }
     cur = null; document.body.classList.remove('padding');
     const w = $('.wrap'); if (w) w.style.transform = '';
   }
@@ -59,6 +63,11 @@
     buzz();
     if (k === 'done') return closePad();
     if (k === 'next') { const f = fields(), n = f[f.indexOf(cur) + 1]; return n ? openPad(n) : closePad(); }
+    if (cur.dataset.fresh === '1') {
+      cur.dataset.fresh = '0';
+      if (k === 'del') { cur.value = ''; return cur.dispatchEvent(new Event('input', { bubbles: true })); }
+      cur.value = '';
+    }
     let v = cur.value;
     if (k === 'del') v = v.slice(0, -1);
     else if (k === '.') { if (v.includes('.')) return; v = (v || '0') + '.'; }
@@ -96,8 +105,11 @@
       e.preventDefault(); setMenu(false);
       if (a.getAttribute('href') !== (page + '.html')) toast(a.textContent.trim() + ' page is built in a later step');
     });
-    if ('serviceWorker' in navigator && !window.VORX_DEMO && location.protocol.startsWith('http'))
+    if ('serviceWorker' in navigator && !window.VORX_DEMO && location.protocol.startsWith('http')) {
+      const had = !!navigator.serviceWorker.controller;      /* reload once when an updated service worker takes over, so new code shows up */
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) location.reload(); });
       navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    }
   }
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
   window.VORX = { $, $$, store, fmt, toast, buzz, openPad, closePad };

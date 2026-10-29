@@ -21,7 +21,19 @@
 .fl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .fl .in{min-height:clamp(36px,5.6dvh,50px)}.both .fl .in{min-height:34px}
 #sec21 .sub,#sec21 .tile:not(.w) .in{color:#f08cff}
+#ozbox{display:flex;flex-direction:column;gap:6px}
+#cmp{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+.cg{flex:1;min-height:0;display:grid;grid-template-columns:.85fr 1fr 1fr;grid-auto-rows:minmax(30px,1fr);gap:6px;align-items:center}
+.fit .cg .in{min-height:34px;height:100%;font-size:15px;padding:2px 6px}
+.cg .l{font-size:11px;font-weight:800;color:var(--mut)}
+.cg .h{padding:5px;font-size:11px;font-weight:900;letter-spacing:.12em;text-align:center;border-radius:99px;border:1px solid}
+.h.b{color:#6ee7b7;background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.38)}
+.h.s{color:#fda4af;background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.38)}
+.cv{text-align:center;font-size:15px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv.big{padding:6px;font-size:17px;border-radius:12px;background:rgba(22,6,36,.5)}.cv.up{color:var(--up)}.cv.down{color:var(--down)}
 #show{flex:none;min-height:46px}
+.r{display:contents}
+#cmp[data-view="22"] .r:not(.v22),#cmp[data-view="21"] .r:not(.v21),#cmp[data-view="both"] .r:not(.vb){display:none}
 .both .tile{padding:5px 6px}.both .tile .in,.both .tile .in.on{font-size:13px}
 #kts:not(.both) .kh .sub{font-size:14px}
 #kts:not(.both) .fl{grid-template-columns:1fr 1fr;gap:8px}
@@ -57,11 +69,12 @@
     <button class="edit" data-e="grand" aria-label="Edit grand total">✎</button>
   </section>
   <section class="card src">
-    <label class="lbl" for="oz">Screen rate · USD per oz</label>
-    <input class="in big" id="oz" data-pad="Screen rate (USD per oz)" data-save inputmode="none" autocomplete="off" placeholder="0000">
-    <div class="seg" id="tabs"><button data-tab="22">22K only</button><button data-tab="21">21K only</button><button data-tab="both">Both</button></div>
+    <div id="ozbox"><label class="lbl" for="oz">Screen rate · USD per oz</label>
+    <input class="in big" id="oz" data-pad="Screen rate (USD per oz)" data-save inputmode="none" autocomplete="off" placeholder="0000"></div>
+    <div class="seg" id="tabs"><button data-tab="22">22K only</button><button data-tab="21">21K only</button><button data-tab="both">Both</button><button data-tab="cmp">Compare</button></div>
   </section>
   <div id="kts"></div>
+  <section class="card" id="cmp"></section>
   <button class="btn" id="show">Show invoice</button>
 </main>
 
@@ -78,19 +91,37 @@
 (() => {
   const { $, $$, store, fmt, openPad, closePad } = VORX;
   const AED = 3.674, OZ = 31.1035, VORI = 11.664;   // AED per USD, grams per troy oz, grams per vori
-  const P = { 22: [0.926, 0.920], 21: [0.885, 0.880] }, F = { mc: 'MC', dh: 'Dh', cr: 'CR', mg: 'MG' };
-  const S = Object.assign({ tab: '22', p: { 22: 0.926, 21: 0.885 }, v: {} }, store.get('rate', {}));
+  const P = { 22: [0.920, 0.926], 21: [0.880, 0.885] }, CR_DIV = 8.57, F = { mc: 'MC', dh: 'Dh', cr: 'CR', mg: 'MG' };
+  const S = Object.assign({ tab: '22', p: { 22: 0.920, 21: 0.880 }, v: {}, ck: '22' }, store.get('rate', {}));
+  if (S.ver !== 2) { S.p = { 22: 0.920, 21: 0.880 }; S.ver = 2; store.set('rate', S); }   /* new default purity 92.0 and 88.0 */
   const ovr = {}, R = {};
   const tile = (k, id, label, edit) => `<div class="tile"><small>${label}</small><input class="in" id="${id}${k}" readonly inputmode="none" data-pad="${label} · ${k}K"><button class="edit" data-e="${id}${k}" aria-label="Edit ${label}">✎</button></div>`;
 
   $('#kts').innerHTML = ['22', '21'].map(k => `<section class="card kp" id="sec${k}">
     <div class="kh"><span class="sub">${k} KARAT</span><div class="chips">${P[k].map(p => `<button class="chip" data-k="${k}" data-p="${p}">${(p * 100).toFixed(1)}%</button>`).join('')}</div></div>
-    <div class="fl">${Object.keys(F).map(f => `<input class="in" id="${f}${k}" data-pad="${F[f]} · ${k}K" data-save inputmode="none" autocomplete="off" placeholder="${F[f]}" aria-label="${F[f]}">`).join('')}</div>
+    <div class="fl">${Object.keys(F).map(f => `<input class="in" id="${f}${k}" data-pad="${F[f]} · ${k}K" data-save${f === 'cr' ? ' data-conv="1"' : ''} inputmode="none" autocomplete="off" placeholder="${f === 'cr' ? 'CR ÷8.57' : F[f]}" aria-label="${F[f]}">`).join('')}</div>
     <div class="tiles"><div class="tile w"><small>Weight g</small><input class="in" id="w${k}" data-pad="Weight (gm) · ${k}K" data-save inputmode="none" autocomplete="off" placeholder="0"></div>${tile(k, 'rate', '1 Bhori')}${tile(k, 'tot', 'Total')}</div>
   </section>`).join('');
 
+  /* Compare: buy and sell side by side for 22K, 21K or both. An empty sell field uses the buy value. */
+  const KS = ['22', '21'], signed = x => (x >= 0 ? '+' : '\u2212') + fmt(Math.abs(x));
+  const inp = (sd, f, k, label) => `<input class="in" id="${sd}-${f}${k}" data-pad="${label} \u00b7 ${sd === 'b' ? 'Buy' : 'Sell'}${k ? ' ' + k + 'K' : ''}" data-save${f === 'cr' ? ' data-conv="1"' : ''} inputmode="none" autocomplete="off" placeholder="${f === 'cr' ? 'CR \u00f78.57' : label}" aria-label="${label}">`;
+  const row = (cls, label, cells) => `<div class="r ${cls}"><span class="l">${label}</span>${cells}</div>`;
+  let rows = row('v22 v21 vb', 'Screen rate', inp('b', 'oz', '', 'Screen rate') + inp('s', 'oz', '', 'Screen rate'));
+  KS.forEach(k => Object.keys(F).forEach(f => { rows += row('v' + k, F[f], inp('b', f, k, F[f]) + inp('s', f, k, F[f])); }));
+  KS.forEach(k => {
+    rows += row(`v${k} vb`, k + 'K wt g', `<input class="in" id="cw${k}" data-pad="Weight (gm) \u00b7 ${k}K" data-save inputmode="none" autocomplete="off" placeholder="0" style="grid-column:2/4">`);
+    rows += row(`v${k} vb`, k + 'K bhori', `<b class="cv" id="rb${k}">0.00</b><b class="cv" id="rs${k}">0.00</b>`);
+    rows += row(`v${k} vb`, k + 'K total', `<b class="cv" id="tb${k}">0.00</b><b class="cv" id="ts${k}">0.00</b>`);
+    rows += row('v' + k, 'Gain', `<b class="cv big" id="gt${k}" style="grid-column:2/4">0.00</b>`);
+  });
+  rows += row('vb', 'All total', '<b class="cv" id="tbA">0.00</b><b class="cv" id="tsA">0.00</b>');
+  rows += row('vb', 'Gain', '<b class="cv big" id="gtA" style="grid-column:2/4">0.00</b>');
+  $('#cmp').innerHTML = `<div class="kh"><div class="chips">${['22', '21', 'both'].map(k => `<button class="chip" data-ck="${k}">${k === 'both' ? 'Both' : k + 'K'}</button>`).join('')}</div><div class="chips" id="cpur"></div></div>
+    <div class="cg"><span></span><span class="h b">BUY</span><span class="h s">SELL</span>${rows}</div>`;
+
   const num = id => parseFloat($('#' + id).value) || 0;
-  const tabs = () => S.tab === 'both' ? ['22', '21'] : [S.tab];
+  const tabs = () => S.tab === 'both' ? ['22', '21'] : S.tab === 'cmp' ? [] : [S.tab];
   const save = () => { $$('[data-save]').forEach(e => S.v[e.id] = e.value); store.set('rate', S); };
   function show(id, v) { const el = $('#' + id); el.dataset.raw = v; if (ovr[id] == null) el.value = fmt(v); }
 
@@ -105,25 +136,56 @@
       show('rate' + k, rate); show('tot' + k, tot); R[k] = { rate, tot, w }; sum += tot;
     });
     R.g = ovr.grand != null ? ovr.grand : sum; show('grand', R.g);
+    calcCmp();
+  }
+  function calcCmp() {
+    const g = (sd, f, k) => {
+      const v = $('#' + sd + '-' + f + k).value;
+      return sd === 's' && v === '' ? (parseFloat($('#b-' + f + k).value) || 0) : (parseFloat(v) || 0);
+    };
+    let TB = 0, TS = 0;
+    KS.forEach(k => {
+      const p = S.p[k], w = num('cw' + k);
+      const rate = sd => ((g(sd, 'oz', '') * AED / OZ * p + g(sd, 'mc', k)) * VORI * (g(sd, 'dh', k) || 1)) + g(sd, 'cr', k) + g(sd, 'mg', k);
+      const rb = rate('b'), rs = rate('s'), tb = rb * w / VORI, ts = rs * w / VORI, d = ts - tb;
+      TB += tb; TS += ts;
+      $('#rb' + k).textContent = fmt(rb); $('#rs' + k).textContent = fmt(rs); $('#tb' + k).textContent = fmt(tb); $('#ts' + k).textContent = fmt(ts);
+      const gt = $('#gt' + k); gt.className = 'cv big ' + (d >= 0 ? 'up' : 'down'); gt.textContent = signed(d) + '  (' + signed(rs - rb) + ' / bhori)';
+      Object.keys(F).forEach(f => { $('#s-' + f + k).placeholder = $('#b-' + f + k).value || (f === 'cr' ? 'CR \u00f78.57' : F[f]); });
+    });
+    $('#s-oz').placeholder = $('#b-oz').value || 'Screen rate';
+    $('#tbA').textContent = fmt(TB); $('#tsA').textContent = fmt(TS);
+    const ga = $('#gtA'); ga.className = 'cv big ' + (TS - TB >= 0 ? 'up' : 'down'); ga.textContent = signed(TS - TB);
   }
   function render() {
     $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+    const cmp = S.tab === 'cmp';
     ['22', '21'].forEach(k => $('#sec' + k).classList.toggle('hide', !tabs().includes(k)));
+    ['#kts', '#ozbox', '.grand', '#show'].forEach(s => $(s).classList.toggle('hide', cmp));
+    $('#cmp').classList.toggle('hide', !cmp);
     $('#kts').classList.toggle('both', S.tab === 'both');
-    $$('.chip').forEach(c => c.classList.toggle('on', +c.dataset.p === S.p[c.dataset.k]));
+    $$('.chip[data-p]').forEach(c => c.classList.toggle('on', +c.dataset.p === S.p[c.dataset.k]));
+    $('#cmp').dataset.view = S.ck;
+    $('#cpur').innerHTML = S.ck === 'both' ? `<span style="font-size:11px;font-weight:700;color:var(--mut)">22K ${(S.p[22] * 100).toFixed(1)}% \u00b7 21K ${(S.p[21] * 100).toFixed(1)}%</span>` : P[S.ck].map(p => `<button class="chip" data-cp="${p}">${(p * 100).toFixed(1)}%</button>`).join('');
+    $$('[data-ck]').forEach(c => c.classList.toggle('on', c.dataset.ck === S.ck));
+    $$('[data-cp]').forEach(c => c.classList.toggle('on', +c.dataset.cp === S.p[S.ck]));
     calc();
   }
 
   $$('[data-save]').forEach(e => { if (S.v[e.id] != null) e.value = S.v[e.id]; });
   document.addEventListener('input', e => {
     const id = e.target.id;
+    if (e.target.dataset.conv) e.target.dataset.dirty = '1';
     if (ovr[id] != null) ovr[id] = parseFloat(e.target.value) || 0;
     else if (e.target.matches('[data-save]')) save();
     calc();
   });
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-tab]'), c = e.target.closest('.chip'), b = e.target.closest('[data-e]');
+    const t = e.target.closest('[data-tab]'), c = e.target.closest('.chip[data-p]'), b = e.target.closest('[data-e]');
     if (t) { S.tab = t.dataset.tab; save(); render(); closePad(); }
+    const ck = e.target.closest('[data-ck]'), cp = e.target.closest('[data-cp]');
+    if (ck) { S.ck = ck.dataset.ck; save(); render(); }
+    if (cp) { S.p[S.ck] = +cp.dataset.cp; save(); render(); }
     if (c) { S.p[c.dataset.k] = +c.dataset.p; save(); render(); }
     if (b) {
       const id = b.dataset.e, el = $('#' + id);
@@ -132,6 +194,14 @@
     }
   });
 
+  /* CR: type the full amount, it is divided by 8.57 and rounded when you leave the field */
+  document.addEventListener('padblur', e => {
+    const el = e.detail;
+    if (!el || !el.dataset.conv || el.dataset.dirty !== '1') return;
+    el.dataset.dirty = '0';
+    const v = parseFloat(el.value); if (!v) return;
+    el.value = String(Math.round(v / CR_DIV)); save(); calc();
+  });
   $('#show').onclick = () => {
     $('#i-date').textContent = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
     const rows = tabs().filter(k => R[k] && R[k].tot > 0).map(k => `<tr><td>${k}K GOLD</td><td>${fmt(R[k].rate)}</td><td>${R[k].w}</td><td class="r">${fmt(R[k].tot)}</td></tr>`).join('');

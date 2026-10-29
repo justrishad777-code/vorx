@@ -42,8 +42,8 @@
 (() => {
   const { $, $$, store } = VORX, K = [24, 22, 21, 18, 14, 10, 9], VORI = 11.664;
   /* 22K and 21K use the same market purity as the Bullion page; tap it to switch between the two variants */
-  const VAR = { 22: [0.926, 0.920], 21: [0.885, 0.880] }, RP = (store.get('rate', {}).p) || {};
-  const PUR = { 22: RP[22] || 0.926, 21: RP[21] || 0.885 };
+  const VAR = { 22: [0.926, 0.920], 21: [0.885, 0.880] }, RAT = store.get('rate', {}), RP = (RAT.ver === 2 && RAT.p) || {};
+  const PUR = { 22: RP[22] || 0.920, 21: RP[21] || 0.880 };
   const pur = k => PUR[k] || k / 24;
   const S = Object.assign({ w: '', sel: 22 }, store.get('karat', {}));
   $('#w').value = S.w;
@@ -64,7 +64,7 @@
     const t = e.target.closest('.tg');
     if (t) {
       const k = +t.dataset.k; PUR[k] = PUR[k] === VAR[k][0] ? VAR[k][1] : VAR[k][0];
-      const rr = store.get('rate', {}); rr.p = Object.assign({ 22: 0.926, 21: 0.885 }, rr.p, { [k]: PUR[k] }); store.set('rate', rr);
+      const rr = store.get('rate', {}); rr.p = Object.assign({ 22: 0.920, 21: 0.880 }, rr.ver === 2 ? rr.p : {}, { [k]: PUR[k] }); rr.ver = 2; store.set('rate', rr);
       VORX.buzz(); return calc();
     }
     const r = e.target.closest('.mr'); if (r) { S.sel = +r.dataset.k; store.set('karat', S); VORX.buzz(); calc(); }
