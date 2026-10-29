@@ -57,6 +57,10 @@ body[data-m=live] .sig i{animation:pulse 1.6s infinite}
 body:not([data-m=live]) .badge i{animation:none}
 .stats{margin-top:8px;min-height:14px;font-size:11px;font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums}
 .typing .stats{display:none}
+.bdrow{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px}.bdrow .badge{margin-top:0}
+.rfs{width:34px;height:34px;display:grid;place-items:center;font-size:18px;line-height:1;color:var(--gold);background:rgba(240,185,11,.14);border:1px solid rgba(240,185,11,.4);border-radius:50%;transition:transform .15s}
+.rfs:active{transform:scale(.88)}.rfs.spin{animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
 @keyframes flash{0%{box-shadow:0 0 0 0 currentColor}100%{box-shadow:0 0 0 14px transparent}}
 
 /* panel */
@@ -139,7 +143,7 @@ body:not([data-m=live]) .badge i{animation:none}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);z-index:70;translate:-50% 16px;padding:10px 18px;max-width:86vw;font-size:12px;font-weight:700;text-align:center;color:var(--base);background:var(--gold);border-radius:16px 6px 16px 6px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.3s}
 #toast.show{opacity:1;translate:-50% 0}
 
-@media(max-height:700px){:root{--w:40px}.hero{padding:60px 24px calc(var(--w) + 14px)}.price{font-size:40px}.badge{margin-top:8px}.stats{margin-top:5px}.bullion{min-height:104px}.typing .badge,.typing .lbl{display:none}.typing .hero{padding-bottom:calc(var(--w) + 6px)}}
+@media(max-height:700px){:root{--w:40px}.hero{padding:60px 24px calc(var(--w) + 14px)}.price{font-size:40px}.bdrow{margin-top:8px}.stats{margin-top:5px}.bullion{min-height:104px}.typing .bdrow,.typing .lbl{display:none}.typing .hero{padding-bottom:calc(var(--w) + 6px)}}
 @media(max-height:640px){.stats{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 </style>
@@ -166,7 +170,7 @@ body:not([data-m=live]) .badge i{animation:none}
 <section class="hero">
   <p class="lbl">Gold spot · USD per oz</p>
   <div class="pxrow"><h1 class="price" id="px">$—</h1><span class="sig" id="sig"><i></i><b id="sigT">…</b></span></div>
-  <div class="badge off" id="bd"><i></i>Connecting…</div>
+  <div class="bdrow"><div class="badge off" id="bd"><i></i>Connecting…</div><button class="rfs" id="rf" aria-label="Refresh gold price">↻</button></div>
   <div class="stats" id="st"></div>
 </section>
 
@@ -296,6 +300,14 @@ paint();
 const FEED = 'https://api.gold-api.com/price/XAU', PXKEY = 'vorx.px', SAMPLE = 4380.04;
 let saved = {}; try { saved = JSON.parse(localStorage.getItem(PXKEY) || '{}'); } catch (e) {}
 const persist = () => { try { localStorage.setItem(PXKEY, JSON.stringify(saved)); } catch (e) {} };
+let OFF = 0;   /* Settings > Rate: difference between the free feed and the app you follow (Kitco, TradingView, Webull) */
+function syncOff() {
+  let o = 0; try { o = parseFloat(JSON.parse(localStorage.getItem('vorx.off') || '0')) || 0; } catch (e) {}
+  OFF = o; const d = o - (saved.off || 0); if (!d) return;
+  ['last', 'close'].forEach(k => { if (saved[k]) saved[k].p += d; });
+  if (saved.sess) { saved.sess.open += d; saved.sess.hi += d; saved.sess.lo += d; }
+  saved.off = o; if (saved.last) px = saved.last.p; persist();
+}
 let px = saved.last ? saved.last.p : null, ts = saved.last ? saved.last.t : null, mode = 'offline', poll;
 
 /* spot gold trades 24/5: closed Fri 17:00 to Sun 18:00 New York time, plus a 17:00 to 18:00 daily break */
@@ -344,12 +356,13 @@ function renderPx(flash){
 }
 
 async function pull(){
-  clearTimeout(poll);
+  clearTimeout(poll); syncOff();
   try {
     const r = await fetch(FEED, { cache:'no-store' });
     if (!r.ok) throw 0;
-    const j = await r.json(), p = parseFloat(j.price);
-    if (!isFinite(p)) throw 0;
+    const j = await r.json(), raw = parseFloat(j.price), p = raw + OFF;
+    if (!isFinite(raw)) throw 0;
+    try { localStorage.setItem('vorx.raw', String(raw)); } catch (e) {}
     const t = Date.parse(j.updatedAt) || Date.now();
     const live = marketOpen() && Date.now() - t < 20 * 60 * 1000;
     const was = px;
@@ -370,7 +383,11 @@ async function pull(){
   poll = setTimeout(pull, mode === 'live' ? 10000 : 60000);
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
-renderPx(); pull();
+$('#rf').onclick = async () => {
+  buzz(10); const b = $('#rf'); b.classList.add('spin'); await pull(); b.classList.remove('spin');
+  toast(mode === 'live' ? 'Price updated' : mode === 'closed' ? 'Market closed, showing the last close' : 'Could not reach the price feed');
+};
+syncOff(); renderPx(); pull();
 </script>
 </body>
 </html>
