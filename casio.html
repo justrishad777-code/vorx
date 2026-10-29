@@ -12,16 +12,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="vorx.css">
 <style>
-.lcd{flex:none;padding:10px 16px 12px;display:flex;flex-direction:column;gap:2px}
+.lcd{flex:1;min-height:150px;padding:12px 18px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:2px}
 .meta{display:flex;justify-content:space-between;align-items:center;font:700 12px/1.6 'Orbitron',monospace;color:var(--mut)}
 #mode{padding:1px 10px;font-size:10px;color:var(--base);background:var(--gold);border-radius:99px}
 #opd{min-width:18px;text-align:right;font-size:18px;color:var(--gold)}
-#main{font-family:'Orbitron','Share Tech Mono',monospace;font-weight:700;font-size:48px;line-height:1.25;text-align:right;white-space:nowrap;overflow:hidden;text-shadow:0 0 14px rgba(240,185,11,.28)}
+#main{font-family:'Inter',system-ui,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;font-size:96px;line-height:1.1;text-align:right;white-space:nowrap;overflow:hidden;text-shadow:0 0 14px rgba(240,185,11,.28)}
 .ctl{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .ctl button{padding:10px 2px;font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--txt);background:var(--glass);border:1px solid var(--line);border-radius:16px 6px 16px 6px;transition:transform .1s}
 .ctl button:active{transform:scale(.94)}.ctl .cc{color:var(--gold)}
-.pad4{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,1fr);gap:8px}
-.ck{font-size:22px;font-weight:800;color:var(--txt);background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.04));border:1px solid var(--line);border-radius:22px 9px 22px 9px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform .1s,background .15s}
+.pad4{flex:0 0 48%;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,1fr);gap:8px}
+.ck{font-size:26px;font-weight:800;color:var(--txt);background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.04));border:1px solid var(--line);border-radius:22px 9px 22px 9px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform .1s,background .15s}
 .ck:nth-child(2n){border-radius:9px 22px 9px 22px}.ck:active{transform:scale(.93);background:rgba(240,185,11,.3)}
 .ck.op{color:#f08cff;background:linear-gradient(145deg,rgba(217,2,238,.3),rgba(22,6,36,.4));border-color:rgba(217,2,238,.42)}
 .ck.ac{color:#fda4af;background:linear-gradient(145deg,rgba(251,113,133,.3),rgba(22,6,36,.4));border-color:rgba(251,113,133,.42)}
@@ -143,8 +143,8 @@
     $('#opd').textContent = SYM[o] || o;
     $('#step').textContent = String(step).padStart(2, '0');
     const md = $('#mode'); md.textContent = mode; md.classList.toggle('hide', !mode);
-    let s = 48; m.style.fontSize = s + 'px';
-    while (m.scrollWidth > m.clientWidth && s > 20) { s -= 2; m.style.fontSize = s + 'px'; }
+    let s = 96; m.style.fontSize = s + 'px';
+    while (m.scrollWidth > m.clientWidth && s > 24) { s -= 2; m.style.fontSize = s + 'px'; }
   }
   function renderList() {
     const el = $('#list');
